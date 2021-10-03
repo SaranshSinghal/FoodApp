@@ -18,6 +18,7 @@ const planRouter = require("./Routers/planRouter");
 // defining routes
 app.use("/api/plan", planRouter);
 app.use("/api/user", userRouter);
+// auth router -> verb
 app.use("/api/auth", authRouter);
 
 // setting the port to use

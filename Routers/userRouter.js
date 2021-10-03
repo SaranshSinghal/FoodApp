@@ -2,9 +2,13 @@ const userModel = require("../models/userModel");
 const express = require("express");
 const userRouter = express.Router();
 const protectRoute = require("./authHelper");
+const factory = require("../helpers/factory");
 
 // operations at /
-userRouter.route("/").get(protectRoute, getUsers);
+userRouter
+  .route("/")
+  .get(protectRoute, authorizeUser["admin"], getUsers)
+  .post(protectRoute, authorizeUser["admin"], createUser);
 
 // operations at /:id
 userRouter
@@ -13,14 +17,11 @@ userRouter
   .patch(updateUser)
   .delete(protectRoute, authorizeUser(["admin"]), deleteUser);
 
-async function getUsers(req, res) {
-  try {
-    let users = await userModel.find();
-    res.status(200).json({ message: "list of all users", users: users });
-  } catch (err) {
-    res.status(500).json({ error: err.message, message: "can't get users" });
-  }
-}
+const createUser = factory.createElement(userModel);
+const getUsers = factory.getElements(userModel);
+const updateUser = factory.updateElement(userModel);
+const deleteUser = factory.deleteElement(userModel);
+const getUserById = factory.getElementById(userModel);
 
 function authorizeUser(rolesArr) {
   return async function (req, res, next) {
@@ -33,25 +34,6 @@ function authorizeUser(rolesArr) {
         .status(403)
         .json({ message: "You are not authorized. Contact Admin!" });
   };
-}
-
-// id
-function getUserById(req, res) {
-  console.log(req.params);
-  res.status(200).send("Hello");
-}
-
-// findBYIdAndUpdate ->
-function updateUser(req, res) {
-  let obj = req.body;
-  for (let key in obj) user[key] = obj[key];
-  res.status(200).json(user);
-}
-
-// findByIdnDelete
-function deleteUser(req, res) {
-  user = {};
-  res.status(200).json(user);
 }
 
 module.exports = userRouter;
