@@ -14,12 +14,14 @@ app.use(cookieParser());
 const authRouter = require("./Routers/authRouter");
 const userRouter = require("./Routers/userRouter");
 const planRouter = require("./Routers/planRouter");
+const reviewRouter = require("./Routers/reviewRouter");
 
 // defining routes
 app.use("/api/plan", planRouter);
 app.use("/api/user", userRouter);
 // auth router -> verb
 app.use("/api/auth", authRouter);
+app.use("/api/review", reviewRouter);
 
 // setting the port to use
 app.listen(8080, function () {

@@ -4,18 +4,18 @@ const userRouter = express.Router();
 const protectRoute = require("./authHelper");
 const factory = require("../helpers/factory");
 
-// operations at /
-userRouter
-  .route("/")
-  .get(protectRoute, authorizeUser["admin"], getUsers)
-  .post(protectRoute, authorizeUser["admin"], createUser);
-
 // operations at /:id
 userRouter
   .route("/:id")
   .get(protectRoute, authorizeUser(["admin", "manager"]), getUserById)
   .patch(updateUser)
   .delete(protectRoute, authorizeUser(["admin"]), deleteUser);
+
+// operations at /
+userRouter
+  .route("/")
+  .get(protectRoute, authorizeUser(["admin"]), getUsers)
+  .post(protectRoute, authorizeUser(["admin"]), createUser);
 
 const createUser = factory.createElement(userModel);
 const getUsers = factory.getElements(userModel);

@@ -14,7 +14,6 @@ module.exports.createElement = function (elementModel) {
   };
 };
 
-
 // query params, sql injection
 // localhost:8080/api/plan?select=name%price&page=1&sort=price&myquery={"price":{"$gt":200}}
 module.exports.getElements = function (elementModel) {
@@ -40,6 +39,7 @@ module.exports.getElements = function (elementModel) {
       let toSkip = (page - 1) * limit;
       let paginatedResultPromise = fileteredQuery.skip(toSkip).limit(limit);
       let result = await paginatedResultPromise;
+
       res
         .status(200)
         .json({ message: "List of all the Elements", elements: result });

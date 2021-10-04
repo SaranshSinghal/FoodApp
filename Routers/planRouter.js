@@ -5,8 +5,8 @@ const protectRoute = require("./authHelper");
 const factory = require("../helpers/factory");
 
 planRouter.use(protectRoute);
-planRouter.route("/").get(getPlans).post(createPlan);
 planRouter.route("/:id").get(getPlanById).patch(updatePlan).delete(deletePlan);
+planRouter.route("/").get(getPlans).post(createPlan);
 
 const createPlan = factory.createElement(planModel);
 const getPlans = factory.getElements(planModel);
