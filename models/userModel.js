@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 const emailValidator = require("email-validator");
 let { DB_LINK } = require("../secrets");
 
+// mongoose -> data -> exact -> data -> that is required to form an entity
+// data completness, data validation
+// name, email, password, confirmPassword-> min, max, confirmPassword, required, unique
 // connnection form
 mongoose
   .connect(DB_LINK, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -12,7 +15,6 @@ mongoose
     console.log("err", err);
   });
 
-// syntax
 const userSchema = new mongoose.Schema({
   name: { type: String, required: [true, "Kindly enter your name"] },
   email: {
@@ -23,36 +25,40 @@ const userSchema = new mongoose.Schema({
       return emailValidator.validate(this.email);
     },
   },
-  age: { type: Number },
-  password: { type: String, minlength: 7, required: true },
+  password: { type: String, minlength: 8, required: true },
   confirmPassword: {
     type: String,
-    minlength: 7,
-    validate: function () {
-      return this.password === this.confirmPassword;
-    },
     required: true,
+    minlength: 8,
+    validate: {
+      validator: function () {
+        return this.password === this.confirmPassword;
+      },
+      message: "Please re-enter your password",
+    },
   },
   createdAt: { type: Date },
   token: { type: String },
-  role: { type: String, enum: ["admin", "user", "manager"], default: "user" },
+  validUpto: { Date },
+  role: { type: String, enum: ["admin", "ce", "user"], default: "user" },
+  bookings: { type: [mongoose.Schema.ObjectId], ref: "bookingModel" },
 });
 
 // remember order
-// middleware
-userSchema.pre("save", function () {
+// middleware / hook
+userSchema.pre("save", function (next) {
   // db confirm password will not be saved
   console.log("Hello");
   this.confirmPassword = undefined;
+  next();
 });
 
-// // document method
-// userSchema.methods.resetHandler = function (password, confirmPassword) {
-//   this.password = password;
-//   this.confirmPassword = confirmPassword;
-//   // token reuse is not possible
-//   this.token = undefined;
-// };
+// document method
+userSchema.methods.resetHandler = function (password, confirmPassword) {
+  this.password = password;
+  this.confirmPassword = confirmPassword;
+  this.token = undefined; // token reuse is not possible
+};
 
 const userModel = mongoose.model("userModel", userSchema);
 module.exports = userModel;

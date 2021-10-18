@@ -2,40 +2,39 @@ const userModel = require("../models/userModel");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { JWT_KEY } = require("../secrets");
+const emailSender = require("../helpers/emailSender");
+const { bodyChecker } = require("./utilFns");
+
 const authRouter = express.Router();
-let emailSender = require("../helpers/emailSender");
 
 // operations for login/signUp
-authRouter
-  .post("/signup", setCreatedAt, signupUser)
-  .post("/login", loginUser)
-  .post("/forgetPassword", forgetPassword)
-  .post("/resetPassword", resetPassword);
+authRouter.use(bodyChecker);
+authRouter.route("/signup").post(setCreatedAt, signupUser);
+authRouter.route("/login").post(loginUser);
+authRouter.route("/forgetPassword").post(forgetPassword);
+authRouter.route("/resetPassword").post(resetPassword);
 
 // middleware
 function setCreatedAt(req, res, next) {
   let body = req.body;
-  let length = Object.keys(body).length;
 
-  if (length == 0)
+  if (Object.keys(body).length == 0)
     return res
       .status(400)
       .json({ message: "can't create user when body is empty " });
 
   req.body.createdAt = new Date().toISOString();
   next();
-  // return res.json({ text: "Bye Bye" });
 }
 
 async function signupUser(req, res) {
   //email, user name, password -> req.body
   try {
-    let userObj = req.body;
-    console.log("userObj", req.body);
-    let user = await userModel.create(userObj);
+    let user = await userModel.create(req.body);
     console.log("user", user);
     res.status(200).json({ message: "user created", createdUser: user });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: err.message });
   }
 }
@@ -46,12 +45,12 @@ async function loginUser(req, res) {
   // email -> user / get -> password
   try {
     if (req.body.email) {
-      let user = await userModel.findOne({ email: req.body.email });
+      let { email, password } = req.body;
+      let user = await userModel.findOne({ email });
 
       if (user) {
-        if (user.password === req.body.password) {
-          let payload = user["_id"]; // header
-          let token = jwt.sign({ id: payload }, JWT_KEY);
+        if (user.password === password) {
+          let token = jwt.sign({ id: user["_id"] }, JWT_KEY);
           res.cookie("jwt", token, { HttpOnly: true });
           return res
             .status(200)
@@ -71,22 +70,25 @@ async function loginUser(req, res) {
 }
 
 async function forgetPassword(req, res) {
-  let email = req.body.email;
-  let seq = (Math.floor(Math.random() * 10000) + 10000).toString().substring();
-
   try {
-    if (email) {
-      await userModel.updateOne({ email }, { token: seq });
+    let { email } = req.body;
+    let user = await userModel.findOne({ email });
+    if (user) {
+      let token = (Math.floor(Math.random() * 10000) + 10000)
+        .toString()
+        .substring(1);
+      await userModel.updateOne({ email }, { token: token });
       // email send to nodemailer -> table tag through
       // service -> gmail
-      let user = await userModel.findOne({ email });
-      await emailSender(seq, user.email);
+      let newUser = await userModel.findOne({ email });
+      await emailSender(token, newUser.email);
       console.log(user);
 
-      if (user?.token)
-        return res.status(200).json({ message: "Email sent with token" + seq });
-      else return res.status(404).json({ message: "user not found" });
-    } else return res.status(400).json({ message: "Please enter email" });
+      if (newUser?.token)
+        return res
+          .status(200)
+          .json({ message: "Email sent with token " + token, user: newUser });
+    } else return res.status(404).json({ message: "user not found" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err.message });
@@ -94,24 +96,22 @@ async function forgetPassword(req, res) {
 }
 
 async function resetPassword(req, res) {
-  let { token, password, confirmPassword } = req.body;
-
   try {
-    if (token) {
-      // for finding one record
-      let user = await userModel.findOne({ token });
+    let { token, password, confirmPassword } = req.body;
 
-      if (user) {
-        user.resetHandler(password, confirmPassword);
-        // user.password = password;
-        // user.confirmPassword = confirmPassword;
-        // token reuse is not possible
-        // user.token = undefined;
-        console.log(user);
-        await user.save();
-        res.status(200).json({ message: "user password changed successfully" });
-      } else return res.status(404).json({ message: "incorrect token" });
-    } else return res.status(404).json({ message: "user not found" });
+    // for finding one record
+    let user = await userModel.findOne({ token });
+
+    if (user) {
+      user.resetHandler(password, confirmPassword);
+      console.log(user);
+      await user.save();
+      let newUser = await userModel.findOne({ email: user.email });
+
+      res
+        .status(200)
+        .json({ message: "user password changed successfully", user: newUser });
+    } else return res.status(404).json({ message: "incorrect token" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err.message });

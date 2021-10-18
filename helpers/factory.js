@@ -5,7 +5,7 @@ module.exports.createElement = function (elementModel) {
 
       if (element) {
         element = await elementModel.create(element);
-        res.status(200).json({ element });
+        res.status(200).json({ element: element });
       } else res.status(403).json({ message: "Please enter data" });
     } catch (err) {
       console.log(err);
@@ -24,18 +24,33 @@ module.exports.getElements = function (elementModel) {
       // sort query
       // sort
       // paginate
-      let ans = JSON.parse(req.query.myquery);
+      let ans;
+
+      if (Object.keys(req.query).length) ans = JSON.parse(req.query.myquery);
+      else {
+        console.log(req.query);
+        ans = {};
+      }
+
       console.log("ans", ans);
       let elementsQuery = elementModel.find(ans);
       let sortField = req.query.sort;
-      let sortQuery = elementsQuery.sort(`-${sortField}`);
-      let params = req.query.select.split("%").join(" ");
-      let fileteredQuery = sortQuery.select(`${params} -_id`);
+
+      let sortQuery;
+      if (sortField) sortQuery = elementsQuery.sort(`-${sortField}`);
+      else sortQuery = elementsQuery;
+
+      let fileteredQuery;
+      if (req.query.select) {
+        let params = req.query.select.split("%").join(" ");
+        fileteredQuery = sortQuery.select(`${params} -_id`);
+      } else fileteredQuery = sortQuery;
+
       // pagination
       // skip
       // limit
       let page = Number(req.query.page) || 1;
-      let limit = Number(req.query.limit) || 3;
+      let limit = Number(req.query.limit) || 4;
       let toSkip = (page - 1) * limit;
       let paginatedResultPromise = fileteredQuery.skip(toSkip).limit(limit);
       let result = await paginatedResultPromise;
@@ -44,6 +59,7 @@ module.exports.getElements = function (elementModel) {
         .status(200)
         .json({ message: "List of all the Elements", elements: result });
     } catch (err) {
+      console.log(err);
       res
         .status(500)
         .json({ error: err.message, message: "can't get elements" });
@@ -53,16 +69,19 @@ module.exports.getElements = function (elementModel) {
 
 module.exports.updateElement = function (elementModel) {
   return async function (req, res) {
-    let { id } = req.body;
+    let { id } = req.params;
 
     try {
+      if (req.body.password || req.body.confirmPassword)
+        return res.json({ message: "use forget password instead" });
+
       let element = await elementModel.findById(id);
 
       if (element) {
         delete req.body.id;
-        for (let key in req.body) element[key] = re.body[key];
-        await element.save();
-        res.status(200).json({ element });
+        for (let key in req.body) element[key] = req.body[key];
+        await element.save({ validateBeforeSave: false });
+        res.status(200).json({ element: element });
       } else res.status(404).json({ message: "resource not found" });
     } catch (err) {
       console.log(err);
@@ -73,12 +92,12 @@ module.exports.updateElement = function (elementModel) {
 
 module.exports.deleteElement = function (elementModel) {
   return async function (req, res) {
-    let { id } = req.body;
+    let { id } = req.params;
 
     try {
       let element = await elementModel.findByIdAndRemove(id, req.body);
       if (!element) res.status(404).json({ message: "resource not found" });
-      else res.status(200).json({ element });
+      else res.status(200).json({ element: element });
     } catch (err) {
       console.log(err);
       res.status(500).json({ message: "Server error" });
@@ -86,15 +105,16 @@ module.exports.deleteElement = function (elementModel) {
   };
 };
 
+// getElement
 module.exports.getElementById = function (elementModel) {
   return async function (req, res) {
     try {
       let id = req.params.id;
       let element = await elementModel.findById(id);
-      res.status(200).json({ element });
+      res.status(200).json({ element: element });
     } catch (err) {
       console.log(err);
-      res.status(500).json({ message: "Server error" });
+      res.status(502).json({ message: "Server error" });
     }
   };
 };

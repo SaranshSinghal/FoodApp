@@ -1,39 +1,36 @@
 const userModel = require("../models/userModel");
 const express = require("express");
+const { protectRoute, bodyChecker, isAuthorized } = require("./utilFns");
+
+const {
+  createElement,
+  getElements,
+  updateElement,
+  deleteElement,
+  getElementById,
+} = require("../helpers/factory");
+
 const userRouter = express.Router();
-const protectRoute = require("./authHelper");
-const factory = require("../helpers/factory");
+
+const createUser = createElement(userModel);
+const getUsers = getElements(userModel);
+const updateUser = updateElement(userModel);
+const deleteUser = deleteElement(userModel);
+const getUserById = getElementById(userModel);
+
+userRouter.use(protectRoute);
 
 // operations at /:id
 userRouter
   .route("/:id")
-  .get(protectRoute, authorizeUser(["admin", "manager"]), getUserById)
-  .patch(updateUser)
-  .delete(protectRoute, authorizeUser(["admin"]), deleteUser);
+  .get(getUserById)
+  .patch(bodyChecker, isAuthorized(["admin", "ce"]), updateUser)
+  .delete(bodyChecker, isAuthorized(["admin"]), deleteUser);
 
 // operations at /
 userRouter
   .route("/")
-  .get(protectRoute, authorizeUser(["admin"]), getUsers)
-  .post(protectRoute, authorizeUser(["admin"]), createUser);
-
-const createUser = factory.createElement(userModel);
-const getUsers = factory.getElements(userModel);
-const updateUser = factory.updateElement(userModel);
-const deleteUser = factory.deleteElement(userModel);
-const getUserById = factory.getElementById(userModel);
-
-function authorizeUser(rolesArr) {
-  return async function (req, res, next) {
-    let uid = req.uid;
-    let { role } = await userModel.findById(uid);
-    let isAuthorized = rolesArr.includes(role);
-    if (isAuthorized) next();
-    else
-      res
-        .status(403)
-        .json({ message: "You are not authorized. Contact Admin!" });
-  };
-}
+  .get(bodyChecker, isAuthorized(["admin", "ce"]), getUsers)
+  .post(bodyChecker, isAuthorized(["admin"]), createUser);
 
 module.exports = userRouter;

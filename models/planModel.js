@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 let { DB_LINK } = require("../secrets");
 
-// connnection form
 mongoose
   .connect(DB_LINK, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(function () {
@@ -15,7 +14,7 @@ const planSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, "Kindly pass the name"],
-    unique: true,
+    unique: [true, "Plan must be unique"],
     maxlength: [40, "Your plan length is more than 40 characters"],
   },
   duration: { type: Number, required: [true, "You need to provide duration"] },
@@ -34,6 +33,7 @@ const planSchema = new mongoose.Schema({
     type: [mongoose.Schema.ObjectId],
     ref: "reviewModel",
   },
+  planImages: { type: String },
 });
 
 const planModel = mongoose.model("planModel", planSchema);
