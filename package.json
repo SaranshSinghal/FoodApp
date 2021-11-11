@@ -1,22 +1,29 @@
 {
-  "name": "foodapp",
+  "name": "fitnessapp",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "node app.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "cookie-parser": "^1.4.5",
     "email-validator": "^2.0.4",
     "express": "^4.17.1",
+    "express-mongo-sanitize": "^2.1.0",
+    "express-rate-limit": "^5.5.1",
+    "express-sanitizer": "^1.0.6",
+    "helmet": "^4.6.0",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.0.8",
-    "nodemailer": "^6.6.5"
-  },
-  "devDependencies": {}
+    "mongoose": "^6.0.12",
+    "nodemailer": "^6.7.0",
+    "razorpay": "^2.0.7",
+    "xss-clean": "^0.1.1"
+  }
 }

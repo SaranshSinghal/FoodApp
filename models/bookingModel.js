@@ -12,20 +12,20 @@ mongoose
 
 const bookingSchema = new mongoose.Schema({
   bookedAt: { type: Date, default: Date.now },
-  proceAtThatTime: { type: Number, required: true },
+  priceAtThatTime: { type: Number, required: true },
   user: {
-    type: [mongoose.Schema.ObjectId],
+    type: mongoose.Schema.ObjectId,
     ref: "userModel",
     required: [true, "Booking must belong to a user"],
   },
   plan: {
-    type: [mongoose.Schema.ObjectId],
+    type: mongoose.Schema.ObjectId,
     ref: "planModel",
     required: [true, "Booking must belong to a plan "],
   },
   status: {
     type: String,
-    enum: ["pending", "failed", "sucess"],
+    enum: ["pending", "failed", "success"],
     required: true,
     default: "pending",
   },

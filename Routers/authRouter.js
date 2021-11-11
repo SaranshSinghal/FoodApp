@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { JWT_KEY } = require("../secrets");
 const emailSender = require("../helpers/emailSender");
 const { bodyChecker } = require("./utilFns");
+const bcrypt = require("bcrypt");
 
 const authRouter = express.Router();
 
@@ -49,7 +50,9 @@ async function loginUser(req, res) {
       let user = await userModel.findOne({ email });
 
       if (user) {
-        if (user.password === password) {
+        let areEqual = await bcrypt.compare(password, user.password);
+
+        if (areEqual) {
           let token = jwt.sign({ id: user["_id"] }, JWT_KEY);
           res.cookie("jwt", token, { HttpOnly: true });
           return res

@@ -1,5 +1,10 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const hpp = require("hpp");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const xss = require("xss-clean");
+const mongoSanitize = require("express-mongo-sanitize");
 
 // defining user and auth routers
 const authRouter = require("./Routers/authRouter");
@@ -13,9 +18,19 @@ const app = express();
 
 // getting webpage from public folder
 app.use(express.static("public"));
-//
+app.use(
+  rateLimit({
+    max: 100,
+    windowMs: 15 * 60 * 1000,
+    message:
+      "Too many accounts created from this IP, please try again after an hour",
+  })
+);
+app.use(hpp({ whiteList: ["select", "page", "sort", "myquery"] }));
+app.use(helmet());
 app.use(express.json());
-//
+app.use(xss());
+app.use(mongoSanitize());
 app.use(cookieParser());
 
 // defining routes

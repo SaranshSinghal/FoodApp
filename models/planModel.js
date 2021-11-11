@@ -29,10 +29,7 @@ const planSchema = new mongoose.Schema({
       message: "Discount must be less than actual price",
     },
   },
-  reviews: {
-    type: [mongoose.Schema.ObjectId],
-    ref: "reviewModel",
-  },
+  reviews: { type: mongoose.Schema.ObjectId, ref: "reviewModel" },
   planImages: { type: String },
 });
 

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const emailValidator = require("email-validator");
 let { DB_LINK } = require("../secrets");
+const bcrypt = require("bcrypt");
 
 // mongoose -> data -> exact -> data -> that is required to form an entity
 // data completness, data validation
@@ -41,21 +42,24 @@ const userSchema = new mongoose.Schema({
   token: { type: String },
   validUpto: { Date },
   role: { type: String, enum: ["admin", "ce", "user"], default: "user" },
-  bookings: { type: [mongoose.Schema.ObjectId], ref: "bookingModel" },
+  bookings: { type: mongoose.Schema.ObjectId, ref: "bookingModel" },
 });
 
 // remember order
 // middleware / hook
-userSchema.pre("save", function (next) {
+userSchema.pre("save", async function (next) {
   // db confirm password will not be saved
   console.log("Hello");
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt); // password convert text
   this.confirmPassword = undefined;
   next();
 });
 
 // document method
-userSchema.methods.resetHandler = function (password, confirmPassword) {
-  this.password = password;
+userSchema.methods.resetHandler = async function (password, confirmPassword) {
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt); // password convert text
   this.confirmPassword = confirmPassword;
   this.token = undefined; // token reuse is not possible
 };
